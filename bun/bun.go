@@ -1,12 +1,21 @@
 package bun
 
 import (
-	"errors"
+	"github.com/kellydun/golang-geo"
+	"image"
 )
 
 type Bun struct {
-	Location locationtype
+	Location *geo.Point
 	Size int
-	Picture pic
+	Picture *image.RGBA
 	Description string
 }
+
+
+func (bun *Bun) LogBun(size int, description string) {
+	bun.Location = geo.NewPoint(0,0)
+	bun.Size = size
+	bun.Description = description
+}
+
