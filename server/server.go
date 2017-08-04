@@ -45,8 +45,8 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		r.ParseForm()
-		fmt.Println("Bun Size:", r.Form["size"])
-		fmt.Println("Bun Description:", r.Form["description"])
+		fmt.Println("Bun Size:", r.Form.Get("size"))
+		fmt.Println("Bun Description:", template.HTMLEscapeString(r.Form.Get("description")))
 	}
 }
 
