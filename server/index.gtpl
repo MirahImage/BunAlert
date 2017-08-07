@@ -6,6 +6,5 @@
 </head>
 <body>
   <pre>Did you sight a bun? <a href="bunReport">Report it!</a></pre>
-  </form>
 </body>
 </html>

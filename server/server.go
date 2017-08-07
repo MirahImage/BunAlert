@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"log"
 	"html/template"
+	"log"
+	"net/http"
 )
 
 const port = 9090
@@ -12,36 +12,30 @@ const port = 9090
 const httpContentTypeValue = "text/html; charset=utf-8"
 const httpContentTypeHeader = "Content-Type"
 
+const indexTemplate = "index.gtpl"
+const reportTemplate = "report.gtpl"
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Welcome")
 
 	w.Header().Set(httpContentTypeHeader, httpContentTypeValue)
 
-	t, err := template.ParseFiles("index.gtpl")
+	err := writeTemplate(w, indexTemplate, nil)
 	if err != nil {
-		log.Fatal("template.ParseFiles:", err)
-	}
-	err = t.Execute(w, nil)
-	if err != nil {
-		log.Fatal("template.Execute:", err)
+		log.Fatal("Write template failed:", err)
 	}
 }
 
 func bunReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("Bun report")
 	log.Println("Method:", r.Method)
-	
+
 	w.Header().Set(httpContentTypeHeader, httpContentTypeValue)
 
 	if r.Method == "GET" {
-		t, err := template.ParseFiles("report.gtpl")
+		err := writeTemplate(w, reportTemplate, nil)
 		if err != nil {
-			log.Fatal("template.ParseFiles:", err)
-		}
-		err = t.Execute(w, nil)
-		if err != nil {
-			log.Fatal("template.Execute:", err)
+			log.Fatal("Write Template failed:", err)
 		}
 	} else {
 		r.ParseForm()
@@ -50,14 +44,25 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func writeTemplate(w http.ResponseWriter, templateFile string, templateData interface{}) error {
+	t, err := template.ParseFiles(templateFile)
+
+	if err != nil {
+		return err
+	}
+
+	err = t.Execute(w, templateData)
+	return err
+}
+
 func main() {
 	listeningAddress := fmt.Sprintf(":%d", port)
 	log.Println(fmt.Sprintf("Listening on %s", listeningAddress))
-	
+
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/bunReport", bunReport)
-	
-	err := http.ListenAndServe(":9090", nil)
+
+	err := http.ListenAndServe(listeningAddress, nil)
 
 	if err != nil {
 		log.Fatal("Listen and Serve:", err)
