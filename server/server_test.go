@@ -2,18 +2,11 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
-
-type ErrorWriter struct{}
-
-func (e *ErrorWriter) Write(b []byte) (int, error) {
-	return 0, errors.New("Expected error")
-}
 
 func TestRootHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "/", nil)
