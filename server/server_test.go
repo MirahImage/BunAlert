@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"io"
@@ -120,6 +121,33 @@ func TestMain(t *testing.T) {
 	_, err = http.NewRequest("GET", "/fakeURL", nil)
 	if err != nil {
 		t.Fatal("Error for GET from fakeURL", err)
+	}
+}
+
+func TestValidateToken(t *testing.T) {
+	f0, _ := hex.DecodeString("ffffffffffffffff0000000000000000")
+	var tokenTests = []struct {
+		tokenString string
+		token       []byte
+		err         error
+	}{
+		{"", nil, fmt.Errorf("Token length invalid: was 0 want %v", md5.Size)},
+		{"ztx", nil, fmt.Errorf("Expected error")},
+		{"ffffffffffffffff", nil, fmt.Errorf("Token length invalid: was 16 want %v", md5.Size)},
+		{"ffffffffffffffff0000000000000000", f0, nil},
+	}
+
+	for _, tt := range tokenTests {
+		token, err := validateToken(tt.tokenString)
+		if err != nil && tt.err == nil {
+			t.Errorf("Unexpected error %v", err)
+		}
+		if err == nil && tt.err != nil {
+			t.Errorf("Expected error %v got %v", tt.err, err)
+		}
+		if !reflect.DeepEqual(token, tt.token) {
+			t.Errorf("Expected token %v got %v", tt.token, token)
+		}
 	}
 }
 

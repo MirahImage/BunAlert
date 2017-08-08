@@ -34,6 +34,17 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func validateToken(tokenString string) ([]byte, error) {
+	token, err := hex.DecodeString(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	if len(token) != md5.Size {
+		return nil, fmt.Errorf("Token length invalid: was %v want %v", len(token), md5.Size)
+	}
+	return token, nil
+}
+
 func bunReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("Bun report")
 	log.Println("Method:", r.Method)
@@ -48,14 +59,9 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 	} else {
 		r.ParseForm()
 		tokenString := template.HTMLEscapeString(r.Form.Get("token"))
-		token, e := hex.DecodeString(tokenString)
+		_, e := validateToken(tokenString)
 		if e != nil {
 			log.Println("Invalid token:", e)
-			http.Error(w, "invalid token", http.StatusBadRequest)
-			return
-		}
-		if len(token) != md5.Size {
-			log.Println("Token length invalid ", token)
 			http.Error(w, "invalid token", http.StatusBadRequest)
 			return
 		}
