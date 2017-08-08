@@ -65,17 +65,30 @@ func TestBunReport(t *testing.T) {
 	}
 
 	//test POST
-	reqPost, errPost := http.NewRequest("POST", "/bunReport", nil)
-	if errPost != nil {
-		t.Fatal(errPost)
+	req, err = http.NewRequest("POST", "/bunReport?size=1", nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, reqPost)
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
 
-	if status := rec.Code; status != http.StatusOK {
+	if rr.Code != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+			rr.Code, http.StatusOK)
+	}
+
+	req, err = http.NewRequest("POST", "/bunReport", nil)
+	if err != nil {
+		t.Fatal("Unable to handle bunReport with no size")
+	}
+
+	rr = httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			rr.Code, http.StatusOK)
 	}
 
 }
@@ -113,4 +126,15 @@ func testTemplate(templateFile string, templateData interface{}, t *testing.T) (
 	}
 
 	return buf
+}
+
+func TestMain(t *testing.T) {
+	_, err := http.NewRequest("GET", ":-41", nil)
+	if err == nil {
+		t.Fatal("No error for GET from port -41 ")
+	}
+	_, err = http.NewRequest("GET", "/fakeURL", nil)
+	if err != nil {
+		t.Fatal("Error for GET from fakeURL", err)
+	}
 }

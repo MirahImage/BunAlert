@@ -5,6 +5,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
+
+	bun "github.com/MirahImage/BunAlert/bun"
 )
 
 const port = 9090
@@ -14,6 +17,7 @@ const httpContentTypeHeader = "Content-Type"
 
 const indexTemplate = "index.gtpl"
 const reportTemplate = "report.gtpl"
+const successTemplate = "success.gtpl"
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Welcome")
@@ -39,8 +43,25 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		r.ParseForm()
-		fmt.Println("Bun Size:", r.Form.Get("size"))
-		fmt.Println("Bun Description:", template.HTMLEscapeString(r.Form.Get("description")))
+		sizeString := template.HTMLEscapeString(r.Form.Get("size"))
+		size := 0
+		var err error
+		if sizeString != "" {
+			size, err = strconv.Atoi(sizeString)
+			if err != nil {
+				log.Fatal("Expected integer size ", err)
+			}
+		}
+		description := template.HTMLEscapeString(r.Form.Get("description"))
+		var b bun.Bun
+		b.LogBun(size, description)
+		fmt.Println("Bun Size:", b.Size)
+		fmt.Println("Bun Description:", b.Description)
+		log.Println("Bun reported")
+		/*err := writeTemplate(w, successTemplate, nil)
+		if err != nil {
+			log.Fatal("Write Template failed:", err)
+		}*/
 	}
 }
 
