@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"html/template"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,9 +21,9 @@ func TestRootHandler(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
+	if rr.Code != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+			rr.Code, http.StatusOK)
 	}
 
 	buf := testTemplate(indexTemplate, nil, t)
@@ -35,55 +36,38 @@ func TestRootHandler(t *testing.T) {
 }
 
 func TestBunReport(t *testing.T) {
-	//test GET
-	req, err := http.NewRequest("GET", "/bunReport", nil)
-	if err != nil {
-		t.Fatal(err)
+	var handlerTests = []struct {
+		method      string
+		urlString   string
+		requestBody io.Reader
+		body        string
+		status      int
+	}{
+		{"GET", "/bunReport", nil, testTemplate(reportTemplate, nil, t).String(), http.StatusOK},
+		{"POST", "/bunReport", nil, "", http.StatusOK},
+		{"POST", "/bunReport?size=1", nil, "", http.StatusOK},
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(bunReport)
+	for _, tt := range handlerTests {
+		req, err := http.NewRequest(tt.method, tt.urlString, tt.requestBody)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	handler.ServeHTTP(rr, req)
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(bunReport)
+		handler.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+		if rr.Code != tt.status {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				rr.Code, tt.status)
+		}
+
+		if tt.body != "" && rr.Body.String() != tt.body {
+			t.Errorf("handler returned unexpected body: got %v want %v",
+				rr.Body.String(), tt.body)
+		}
 	}
-
-	buf := testTemplate(reportTemplate, nil, t)
-	if rr.Body.String() != buf.String() {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), buf.String())
-	}
-
-	//test POST
-	req, err = http.NewRequest("POST", "/bunReport?size=1", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr = httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
-
-	req, err = http.NewRequest("POST", "/bunReport", nil)
-	if err != nil {
-		t.Fatal("Unable to handle bunReport with no size")
-	}
-
-	rr = httptest.NewRecorder()
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
-	}
-
 }
 
 func TestWriteTemplate(t *testing.T) {
