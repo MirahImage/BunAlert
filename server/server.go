@@ -43,25 +43,16 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		r.ParseForm()
-		sizeString := template.HTMLEscapeString(r.Form.Get("size"))
-		size := 0
-		var err error
-		if sizeString != "" {
-			size, err = strconv.Atoi(sizeString)
-			if err != nil {
-				log.Fatal("Expected integer size ", err)
-			}
+		size, err := strconv.Atoi(template.HTMLEscapeString(r.Form.Get("size")))
+		if err != nil {
+			size = 0
+			log.Println("Expected integer size ", err)
 		}
-		description := template.HTMLEscapeString(r.Form.Get("description"))
 		var b bun.Bun
-		b.LogBun(size, description)
+		b.LogBun(size, template.HTMLEscapeString(r.Form.Get("description")))
 		fmt.Println("Bun Size:", b.Size)
 		fmt.Println("Bun Description:", b.Description)
 		log.Println("Bun reported")
-		/*err := writeTemplate(w, successTemplate, nil)
-		if err != nil {
-			log.Fatal("Write Template failed:", err)
-		}*/
 	}
 }
 
