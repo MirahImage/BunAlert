@@ -8,6 +8,7 @@
     <form action="/bunReport" method="post">
       Size: <input type="number" name="size" min="1" max="10">
       Description: <input type="text" name="description">
+      <input type="hidden" name="token" value="{{.}}">
       <input type="submit" value="Report">
     </form>
   </body>

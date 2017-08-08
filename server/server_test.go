@@ -2,11 +2,15 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestRootHandler(t *testing.T) {
@@ -43,9 +47,9 @@ func TestBunReport(t *testing.T) {
 		body        string
 		status      int
 	}{
-		{"GET", "/bunReport", nil, testTemplate(reportTemplate, nil, t).String(), http.StatusOK},
-		{"POST", "/bunReport", nil, "", http.StatusOK},
-		{"POST", "/bunReport?size=1", nil, "", http.StatusOK},
+		{"GET", "/bunReport", nil, testTemplate(reportTemplate, fmt.Sprintf("%x", generateToken()), t).String(), http.StatusOK},
+		{"POST", "/bunReport?token=ffffffffffffffff0000000000000000", nil, "", http.StatusOK},
+		{"POST", "/bunReport?size=1&token=ffffffffffffffff0000000000000000", nil, "", http.StatusOK},
 	}
 
 	for _, tt := range handlerTests {
@@ -77,17 +81,19 @@ func TestWriteTemplate(t *testing.T) {
 		t.Fatal("Did not receive expected error no such file or directory:", err)
 	}
 
-	err = writeTemplate(rr, indexTemplate, nil)
+	token := fmt.Sprintf("%x", generateToken())
+	err = writeTemplate(rr, reportTemplate, token)
 	if err != nil {
 		t.Fatal("Error with template file:", err)
 	}
 
-	buf := testTemplate(indexTemplate, nil, t)
+	buf := testTemplate(reportTemplate, token, t)
 
 	if rr.Body.String() != buf.String() {
 		t.Errorf("writeTemplate returned unexpected body: got %v expected %v",
 			rr.Body.String(), buf.String())
 	}
+
 }
 
 func testTemplate(templateFile string, templateData interface{}, t *testing.T) (buf *bytes.Buffer) {
@@ -113,5 +119,21 @@ func TestMain(t *testing.T) {
 	_, err = http.NewRequest("GET", "/fakeURL", nil)
 	if err != nil {
 		t.Fatal("Error for GET from fakeURL", err)
+	}
+}
+
+func TestGenerateToken(t *testing.T) {
+	sum := generateToken()
+	if sum == nil {
+		t.Fatal("Generated empty token")
+	}
+	if len(sum) != md5.Size {
+		t.Errorf("Token is of wrong length, got %v want %v",
+			len(sum), md5.Size)
+	}
+	time.Sleep(time.Second)
+	sum2 := generateToken()
+	if reflect.DeepEqual(sum, sum2) {
+		t.Errorf("Tokens are not unique: %x and %x", sum, sum2)
 	}
 }

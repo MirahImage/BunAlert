@@ -1,11 +1,15 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	bun "github.com/MirahImage/BunAlert/bun"
 )
@@ -37,12 +41,22 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(httpContentTypeHeader, httpContentTypeValue)
 
 	if r.Method == "GET" {
-		err := writeTemplate(w, reportTemplate, nil)
+		err := writeTemplate(w, reportTemplate, fmt.Sprintf("%x", generateToken()))
 		if err != nil {
 			log.Fatal("Write Template failed:", err)
 		}
 	} else {
 		r.ParseForm()
+		tokenString := template.HTMLEscapeString(r.Form.Get("token"))
+		token, e := hex.DecodeString(tokenString)
+		if e != nil {
+			log.Fatal("Invalid token ", e)
+		}
+		if len(token) != md5.Size {
+			log.Fatal("Token length invalid ", token)
+		}
+		fmt.Println("token:", tokenString)
+
 		size, err := strconv.Atoi(template.HTMLEscapeString(r.Form.Get("size")))
 		if err != nil {
 			size = 0
@@ -65,6 +79,12 @@ func writeTemplate(w http.ResponseWriter, templateFile string, templateData inte
 
 	err = t.Execute(w, templateData)
 	return err
+}
+
+func generateToken() []byte {
+	h := md5.New()
+	io.WriteString(h, strconv.FormatInt(time.Now().Unix(), 10))
+	return h.Sum(nil)
 }
 
 func main() {
