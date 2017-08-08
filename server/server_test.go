@@ -48,6 +48,7 @@ func TestBunReport(t *testing.T) {
 		status      int
 	}{
 		{"GET", "/bunReport", nil, testTemplate(reportTemplate, fmt.Sprintf("%x", generateToken()), t).String(), http.StatusOK},
+		{"POST", "/bunReport", nil, "", http.StatusBadRequest},
 		{"POST", "/bunReport?token=ffffffffffffffff0000000000000000", nil, "", http.StatusOK},
 		{"POST", "/bunReport?size=1&token=ffffffffffffffff0000000000000000", nil, "", http.StatusOK},
 	}

@@ -50,10 +50,14 @@ func bunReport(w http.ResponseWriter, r *http.Request) {
 		tokenString := template.HTMLEscapeString(r.Form.Get("token"))
 		token, e := hex.DecodeString(tokenString)
 		if e != nil {
-			log.Fatal("Invalid token ", e)
+			log.Println("Invalid token:", e)
+			http.Error(w, "invalid token", http.StatusBadRequest)
+			return
 		}
 		if len(token) != md5.Size {
-			log.Fatal("Token length invalid ", token)
+			log.Println("Token length invalid ", token)
+			http.Error(w, "invalid token", http.StatusBadRequest)
+			return
 		}
 		fmt.Println("token:", tokenString)
 
